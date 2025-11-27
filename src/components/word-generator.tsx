@@ -4,11 +4,14 @@ import { useState, useRef, useCallback } from "react";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Sparkles, Type, Trash2 } from "lucide-react";
+import { Download, Sparkles, Type, Trash2, AlertCircle } from "lucide-react";
 import Image from "next/image";
 
 // Valid characters mapping
 const VALID_CHARS = /^[a-zA-Z0-9 ]*$/;
+
+// Time to wait for images to fully render before capturing (in ms)
+const IMAGE_RENDER_DELAY_MS = 100;
 
 // Get image path for a character
 function getCharImagePath(char: string): string {
@@ -21,6 +24,7 @@ function getCharImagePath(char: string): string {
 export default function WordGenerator() {
   const [inputText, setInputText] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange = useCallback(
@@ -29,6 +33,7 @@ export default function WordGenerator() {
       // Only allow alphanumeric characters and spaces
       if (VALID_CHARS.test(value)) {
         setInputText(value);
+        setError(null); // Clear any previous error when typing
       }
     },
     []
@@ -36,16 +41,18 @@ export default function WordGenerator() {
 
   const handleClear = useCallback(() => {
     setInputText("");
+    setError(null);
   }, []);
 
   const handleGenerate = useCallback(async () => {
     if (!previewRef.current || inputText.trim().length === 0) return;
 
     setIsGenerating(true);
+    setError(null);
 
     try {
-      // Wait for images to load
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Wait for images to fully render before capturing
+      await new Promise((resolve) => setTimeout(resolve, IMAGE_RENDER_DELAY_MS));
 
       const dataUrl = await toPng(previewRef.current, {
         quality: 1.0,
@@ -61,8 +68,9 @@ export default function WordGenerator() {
         .toLowerCase()}.png`;
       link.href = dataUrl;
       link.click();
-    } catch (error) {
-      console.error("Error generating image:", error);
+    } catch (err) {
+      console.error("Error generating image:", err);
+      setError("Failed to generate image. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -185,7 +193,7 @@ export default function WordGenerator() {
       </div>
 
       {/* Generate Button */}
-      <div className="flex justify-center">
+      <div className="flex flex-col items-center gap-3">
         <Button
           onClick={handleGenerate}
           disabled={inputText.trim().length === 0 || isGenerating}
@@ -203,6 +211,14 @@ export default function WordGenerator() {
             </>
           )}
         </Button>
+
+        {/* Error Message */}
+        {error && (
+          <div className="flex items-center gap-2 text-red-500 bg-red-50 px-4 py-2 rounded-lg">
+            <AlertCircle className="w-4 h-4" />
+            <span className="text-sm">{error}</span>
+          </div>
+        )}
       </div>
 
       {/* Info Section */}

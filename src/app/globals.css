@@ -50,7 +50,8 @@
 body {
   background: linear-gradient(135deg, #fef7f9 0%, #e6f3fa 50%, #fff0f5 100%);
   color: var(--foreground);
-  font-family: "Quicksand", "Comic Sans MS", cursive, sans-serif;
+  /* Using playful system fonts - Comic Sans MS as primary for fun, whimsical feel */
+  font-family: "Comic Sans MS", "Chalkboard SE", "Comic Neue", cursive, sans-serif;
   min-height: 100vh;
 }
 
