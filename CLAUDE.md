@@ -25,13 +25,15 @@ A Next.js 16 application that converts text input into PNG images using custom l
 - `src/components/word-generator.tsx` - Main component with input, preview, and PNG generation logic
 - `src/app/page.tsx` - Simple wrapper that renders WordGenerator
 - `src/app/layout.tsx` - Root layout with SEO metadata
+- `src/app/opengraph-image.tsx` - Dynamic OG image generation using Next.js ImageResponse
+- `src/app/twitter-image.tsx` - Dynamic Twitter card image
 - `public/letters/` - Character PNG assets: `A-Z.png`, `0-9.png`
 
 ### UI Components
 Uses shadcn/ui pattern with components in `src/components/ui/`. The `cn()` utility in `src/lib/utils.ts` merges Tailwind classes via `clsx` + `tailwind-merge`.
 
 ### Styling
-Tailwind CSS 4 with a light blue (#87ceeb) and pink (#ffb6c1) color theme. Styles are defined inline in components rather than in globals.css.
+Tailwind CSS 4 with a pink (#e91e8b) primary color theme. Styles are defined inline in components rather than in globals.css.
 
 ## Notes
 
