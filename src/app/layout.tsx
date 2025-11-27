@@ -7,19 +7,22 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Kween Yasmin Generator | Transform Words to Beautiful Images",
+  title: "Kween Sans Generator | Transform Words to Beautiful Images",
   description:
-    "Create stunning word-to-image transformations with Kween Yasmin Generator. Type alphanumeric characters and generate beautiful PNG images instantly.",
+    "Create stunning word-to-image transformations with Kween Sans Generator. Type alphanumeric characters and generate beautiful PNG images instantly.",
   keywords: [
     "word generator",
     "png generator",
     "image creator",
     "text to image",
-    "kween yasmin",
+    "kween sans",
   ],
-  authors: [{ name: "Kween Yasmin Generator" }],
+  authors: [{ name: "Kween Sans Generator" }],
+  icons: {
+    icon: "/favicon.ico",
+  },
   openGraph: {
-    title: "Kween Yasmin Generator",
+    title: "Kween Sans Generator",
     description: "Transform your words into beautiful PNG images",
     type: "website",
   },

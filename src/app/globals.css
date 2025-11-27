@@ -24,22 +24,22 @@
 }
 
 :root {
-  --background: #fef7f9;
+  --background: #0891b2;
   --foreground: #3d3d3d;
   --card: #ffffff;
   --card-foreground: #3d3d3d;
-  --primary: #87ceeb;
+  --primary: #e91e8b;
   --primary-foreground: #ffffff;
-  --secondary: #ffb6c1;
-  --secondary-foreground: #3d3d3d;
+  --secondary: #7c3aed;
+  --secondary-foreground: #ffffff;
   --muted: #f5f5f5;
   --muted-foreground: #737373;
-  --accent: #e6f3fa;
+  --accent: #fce7f3;
   --accent-foreground: #3d3d3d;
   --destructive: #ef4444;
   --border: #e5e5e5;
   --input: #e5e5e5;
-  --ring: #87ceeb;
+  --ring: #e91e8b;
   --radius: 0.75rem;
 }
 
@@ -48,7 +48,8 @@
 }
 
 body {
-  background: #5b9fc9;
+  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 25%, #7c3aed 75%, #8b5cf6 100%);
+  background-attachment: fixed;
   color: var(--foreground);
   /* Using playful system fonts - Comic Sans MS as primary for fun, whimsical feel */
   font-family: "Comic Sans MS", "Chalkboard SE", "Comic Neue", cursive, sans-serif;
@@ -65,7 +66,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #5b9fc9;
+  background: linear-gradient(180deg, #06b6d4, #7c3aed);
   border-radius: 4px;
 }
 
@@ -97,7 +98,7 @@ body {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(135, 206, 235, 0.3) 50%,
+    rgba(233, 30, 139, 0.3) 50%,
     transparent 100%
   );
   background-size: 200% 100%;

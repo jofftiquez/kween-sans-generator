@@ -9,13 +9,13 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="py-6 text-center border-t border-[#e5e5e5] bg-white/50 backdrop-blur-sm">
+      {/* <footer className="py-6 text-center border-t border-[#e5e5e5] bg-white/50 backdrop-blur-sm">
         <div className="flex items-center justify-center gap-2 text-sm text-[#737373]">
           <span role="img" aria-label="queen">👑</span>
           <span>Made with love for Kween Yasmin</span>
           <span role="img" aria-label="queen">👑</span>
         </div>
-      </footer>
+      </footer> */}
     </div>
   );
 }
