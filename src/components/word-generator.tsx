@@ -83,16 +83,16 @@ export default function WordGenerator() {
       {/* Header Section */}
       <div className="text-center mb-8 md:mb-12">
         <div className="inline-flex items-center gap-2 mb-4">
-          <Sparkles className="w-8 h-8 text-[#87ceeb] animate-pulse" />
-          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-[#87ceeb] via-[#dda0dd] to-[#ffb6c1] bg-clip-text text-transparent drop-shadow-sm">
+          <Sparkles className="w-8 h-8 text-white animate-pulse" />
+          <h1 className="text-4xl md:text-6xl font-bold text-white drop-shadow-sm">
             Kween Yasmin
           </h1>
           <Sparkles className="w-8 h-8 text-[#ffb6c1] animate-pulse" />
         </div>
-        <h2 className="text-xl md:text-2xl text-[#737373] font-medium">
+        <h2 className="text-xl md:text-2xl text-white/90 font-medium">
           Generator
         </h2>
-        <p className="mt-4 text-[#737373] max-w-lg mx-auto">
+        <p className="mt-4 text-white/80 max-w-lg mx-auto">
           Type your message using letters (a-z, A-Z) and numbers (0-9), then
           generate your beautiful image!
         </p>
@@ -153,7 +153,7 @@ export default function WordGenerator() {
           )}
         </div>
 
-        <div className="min-h-[120px] flex items-center justify-center bg-gradient-to-r from-[#f5f5f5] to-[#fef7f9] rounded-xl p-4 overflow-x-auto">
+        <div className="min-h-[120px] flex items-center justify-center bg-[#f5f5f5] rounded-xl p-4 overflow-x-auto">
           {inputText.length === 0 ? (
             <p className="text-[#737373] italic text-center">
               Your preview will appear here...
@@ -197,7 +197,7 @@ export default function WordGenerator() {
         <Button
           onClick={handleGenerate}
           disabled={inputText.trim().length === 0 || isGenerating}
-          className="h-14 px-8 text-lg font-semibold bg-gradient-to-r from-[#87ceeb] to-[#ffb6c1] hover:from-[#6bb8da] hover:to-[#ff9eb0] text-white shadow-lg hover:shadow-xl transition-all rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-14 px-8 text-lg font-semibold bg-[#87ceeb] hover:bg-[#6bb8da] text-white shadow-lg hover:shadow-xl transition-all rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGenerating ? (
             <>
