@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Sparkles, Type, Trash2, AlertCircle } from "lucide-react";
+import { Download, Type, Trash2, AlertCircle } from "lucide-react";
 import Image from "next/image";
 
 // Valid characters mapping
@@ -83,11 +83,11 @@ export default function WordGenerator() {
       {/* Header Section */}
       <div className="text-center mb-8 md:mb-12">
         <div className="inline-flex items-center gap-2 mb-4">
-          <Sparkles className="w-8 h-8 text-white animate-pulse" />
-          <h1 className="text-4xl md:text-6xl font-bold text-white drop-shadow-sm">
+          <span className="text-3xl md:text-5xl" role="img" aria-label="queen">👑</span>
+          <h1 className="text-4xl md:text-6xl font-bold text-white">
             Kween Yasmin
           </h1>
-          <Sparkles className="w-8 h-8 text-[#ffb6c1] animate-pulse" />
+          <span className="text-3xl md:text-5xl" role="img" aria-label="queen">👑</span>
         </div>
         <h2 className="text-xl md:text-2xl text-white/90 font-medium">
           Generator
@@ -99,7 +99,7 @@ export default function WordGenerator() {
       </div>
 
       {/* Input Section */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-lg border border-[#e5e5e5] mb-8">
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-[#e5e5e5] mb-8">
         <div className="flex items-center gap-2 mb-4">
           <Type className="w-5 h-5 text-[#87ceeb]" />
           <label
@@ -143,7 +143,7 @@ export default function WordGenerator() {
       </div>
 
       {/* Preview Section */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-lg border border-[#e5e5e5] mb-8">
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-[#e5e5e5] mb-8">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-[#3d3d3d]">Preview</h3>
           {inputText.length > 0 && (
@@ -197,7 +197,7 @@ export default function WordGenerator() {
         <Button
           onClick={handleGenerate}
           disabled={inputText.trim().length === 0 || isGenerating}
-          className="h-14 px-8 text-lg font-semibold bg-[#87ceeb] hover:bg-[#6bb8da] text-white shadow-lg hover:shadow-xl transition-all rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-14 px-8 text-lg font-semibold bg-[#5b9fc9] hover:bg-[#4a8eb8] text-white transition-all rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGenerating ? (
             <>

@@ -48,7 +48,7 @@
 }
 
 body {
-  background: #87ceeb;
+  background: #5b9fc9;
   color: var(--foreground);
   /* Using playful system fonts - Comic Sans MS as primary for fun, whimsical feel */
   font-family: "Comic Sans MS", "Chalkboard SE", "Comic Neue", cursive, sans-serif;
@@ -65,7 +65,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #87ceeb;
+  background: #5b9fc9;
   border-radius: 4px;
 }
 
