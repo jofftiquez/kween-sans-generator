@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Type, Trash2, AlertCircle, Palette, Move, Maximize2 } from "lucide-react";
+import { Download, Type, Trash2, AlertCircle, Palette, Move } from "lucide-react";
 import Image from "next/image";
 
 // Valid characters mapping (letters and numbers, will be converted to uppercase)
@@ -26,17 +26,6 @@ const BACKGROUND_PRESETS = [
 // Padding options in pixels
 const PADDING_OPTIONS = [0, 8, 16, 24, 32] as const;
 
-// Size presets for social media
-type SizePreset = { name: string; width: number; height: number };
-const SIZE_PRESETS: SizePreset[] = [
-  { name: "Auto", width: 0, height: 0 },
-  { name: "IG Post", width: 1080, height: 1080 },
-  { name: "IG Story", width: 1080, height: 1920 },
-  { name: "FB Post", width: 1200, height: 630 },
-  { name: "X Post", width: 1200, height: 675 },
-  { name: "LinkedIn", width: 1200, height: 627 },
-];
-
 // Get image path for a character (all uppercase letters and numbers use PNG)
 function getCharImagePath(char: string): string {
   return `/letters/${char}.png`;
@@ -47,8 +36,8 @@ export default function WordGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [backgroundColor, setBackgroundColor] = useState("transparent");
+  const [customColor, setCustomColor] = useState("#e91e8b");
   const [padding, setPadding] = useState(8);
-  const [selectedSize, setSelectedSize] = useState<SizePreset>(SIZE_PRESETS[0]);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange = useCallback(
@@ -80,17 +69,10 @@ export default function WordGenerator() {
 
       const options: Parameters<typeof toPng>[1] = {
         quality: 1.0,
-        pixelRatio: 2,
+        pixelRatio: 2, // 2x for retina quality
         backgroundColor: backgroundColor === "transparent" ? undefined : backgroundColor,
         skipFonts: true, // Skip font embedding to avoid cross-origin CSS errors
       };
-
-      // Apply size preset if not auto
-      if (selectedSize.width > 0 && selectedSize.height > 0) {
-        options.width = selectedSize.width;
-        options.height = selectedSize.height;
-        options.pixelRatio = 1; // Use exact dimensions for social media
-      }
 
       const dataUrl = await toPng(previewRef.current, options);
 
@@ -108,7 +90,7 @@ export default function WordGenerator() {
     } finally {
       setIsGenerating(false);
     }
-  }, [inputText, backgroundColor, selectedSize]);
+  }, [inputText, backgroundColor]);
 
   const characters = inputText.split("");
   const words = inputText.split(" ").filter(word => word.length > 0);
@@ -193,18 +175,11 @@ export default function WordGenerator() {
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-[#e5e5e5] order-2 lg:row-span-2">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-[#3d3d3d]">Preview</h3>
-            <div className="flex items-center gap-2">
-              {selectedSize.width > 0 && (
-                <span className="text-sm text-[#e91e8b] bg-[#e91e8b]/10 px-3 py-1 rounded-full">
-                  {selectedSize.width}x{selectedSize.height}
-                </span>
-              )}
-              {inputText.length > 0 && (
-                <span className="text-sm text-[#737373] bg-[#f5f5f5] px-3 py-1 rounded-full">
-                  {characters.filter((c) => c !== " ").length} characters
-                </span>
-              )}
-            </div>
+            {inputText.length > 0 && (
+              <span className="text-sm text-[#737373] bg-[#f5f5f5] px-3 py-1 rounded-full">
+                {characters.filter((c) => c !== " ").length} characters
+              </span>
+            )}
           </div>
 
           <div className="min-h-[200px] lg:min-h-[300px] flex items-center justify-center bg-[#f5f5f5] rounded-xl p-4 overflow-auto">
@@ -219,11 +194,6 @@ export default function WordGenerator() {
                 style={{
                   backgroundColor: backgroundColor === "transparent" ? "transparent" : backgroundColor,
                   padding: `${padding}px`,
-                  ...(selectedSize.width > 0 && {
-                    minWidth: `${selectedSize.width / 4}px`,
-                    minHeight: `${selectedSize.height / 4}px`,
-                    aspectRatio: `${selectedSize.width} / ${selectedSize.height}`,
-                  }),
                 }}
               >
                 {words.map((word, wordIndex) => (
@@ -294,7 +264,7 @@ export default function WordGenerator() {
                   Background
                 </label>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 items-center">
                 {BACKGROUND_PRESETS.map((preset) => (
                   <button
                     key={preset.value}
@@ -312,6 +282,33 @@ export default function WordGenerator() {
                     {preset.name}
                   </button>
                 ))}
+                {/* Custom Color Picker */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setBackgroundColor(customColor)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      backgroundColor === customColor && !BACKGROUND_PRESETS.some(p => p.value === backgroundColor)
+                        ? "ring-2 ring-[#e91e8b] ring-offset-2"
+                        : "hover:bg-gray-100"
+                    }`}
+                    style={{
+                      backgroundColor: customColor,
+                      color: "#fff",
+                    }}
+                  >
+                    Custom
+                  </button>
+                  <input
+                    type="color"
+                    value={customColor}
+                    onChange={(e) => {
+                      setCustomColor(e.target.value);
+                      setBackgroundColor(e.target.value);
+                    }}
+                    className="w-8 h-8 rounded-lg cursor-pointer border-2 border-[#e5e5e5] hover:border-[#e91e8b] transition-colors"
+                    title="Pick a custom color"
+                  />
+                </div>
               </div>
             </div>
 
@@ -340,35 +337,6 @@ export default function WordGenerator() {
               </div>
             </div>
 
-            {/* Size Preset */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Maximize2 className="w-5 h-5 text-[#e91e8b]" />
-                <label className="text-base font-semibold text-[#3d3d3d]">
-                  Output Size
-                </label>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {SIZE_PRESETS.map((preset) => (
-                  <button
-                    key={preset.name}
-                    onClick={() => setSelectedSize(preset)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                      selectedSize.name === preset.name
-                        ? "bg-[#e91e8b] text-white"
-                        : "bg-[#f5f5f5] text-[#3d3d3d] hover:bg-gray-200"
-                    }`}
-                  >
-                    {preset.name}
-                    {preset.width > 0 && (
-                      <span className="ml-1 text-xs opacity-75">
-                        {preset.width}x{preset.height}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </div>
