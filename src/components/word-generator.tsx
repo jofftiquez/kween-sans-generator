@@ -128,6 +128,17 @@ export default function WordGenerator() {
         <p className="mt-4 text-white/80 max-w-lg mx-auto">
           Type your message using letters and numbers, then generate your beautiful image!
         </p>
+        <p className="mt-3 text-sm text-white/60">
+          Resources:{" "}
+          <a
+            href="https://public.canva.site/allpurposekween"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/80 underline hover:text-white transition-colors"
+          >
+            All-Purpose Kween Canva Assets
+          </a>
+        </p>
       </div>
 
       {/* Main Content - Two Column Layout on Desktop */}
@@ -202,7 +213,7 @@ export default function WordGenerator() {
             ) : (
               <div
                 ref={previewRef}
-                className="flex flex-wrap items-center justify-center gap-1 rounded-lg"
+                className="flex flex-wrap items-center justify-center content-center gap-2 rounded-lg"
                 style={{
                   backgroundColor: backgroundColor === "transparent" ? "transparent" : backgroundColor,
                   padding: `${padding}px`,
