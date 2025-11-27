@@ -7,24 +7,43 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Kween Sans Generator | Transform Words to Beautiful Images",
+  title: "Kween Sans Generator | Create Custom Text Images for Social Media",
   description:
-    "Create stunning word-to-image transformations with Kween Sans Generator. Type alphanumeric characters and generate beautiful PNG images instantly.",
+    "Generate beautiful custom text images with Kween Sans font. Perfect for Instagram posts, stories, Facebook, X (Twitter), and LinkedIn. Free meme generator by OSSPH.",
   keywords: [
-    "word generator",
-    "png generator",
-    "image creator",
-    "text to image",
     "kween sans",
+    "text to image generator",
+    "social media image creator",
+    "instagram post generator",
+    "meme generator",
+    "custom font generator",
+    "png generator",
+    "ossph",
   ],
-  authors: [{ name: "Kween Sans Generator" }],
+  authors: [{ name: "OSSPH", url: "https://ossph.org" }],
+  creator: "OSSPH",
+  publisher: "OSSPH",
   icons: {
     icon: "/favicon.ico",
   },
   openGraph: {
     title: "Kween Sans Generator",
-    description: "Transform your words into beautiful PNG images",
+    description:
+      "Generate beautiful custom text images with Kween Sans font. Perfect for social media posts and memes.",
     type: "website",
+    siteName: "Kween Sans Generator",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kween Sans Generator",
+    description:
+      "Generate beautiful custom text images with Kween Sans font. Perfect for social media posts and memes.",
+    creator: "@nicknacnic",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
