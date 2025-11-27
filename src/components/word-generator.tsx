@@ -27,14 +27,15 @@ const BACKGROUND_PRESETS = [
 const PADDING_OPTIONS = [0, 8, 16, 24, 32] as const;
 
 // Size presets for social media
-const SIZE_PRESETS = [
+type SizePreset = { name: string; width: number; height: number };
+const SIZE_PRESETS: SizePreset[] = [
   { name: "Auto", width: 0, height: 0 },
   { name: "IG Post", width: 1080, height: 1080 },
   { name: "IG Story", width: 1080, height: 1920 },
   { name: "FB Post", width: 1200, height: 630 },
   { name: "X Post", width: 1200, height: 675 },
   { name: "LinkedIn", width: 1200, height: 627 },
-] as const;
+];
 
 // Get image path for a character (all uppercase letters and numbers use PNG)
 function getCharImagePath(char: string): string {
@@ -47,7 +48,7 @@ export default function WordGenerator() {
   const [error, setError] = useState<string | null>(null);
   const [backgroundColor, setBackgroundColor] = useState("transparent");
   const [padding, setPadding] = useState(8);
-  const [selectedSize, setSelectedSize] = useState(SIZE_PRESETS[0]);
+  const [selectedSize, setSelectedSize] = useState<SizePreset>(SIZE_PRESETS[0]);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange = useCallback(
@@ -110,6 +111,7 @@ export default function WordGenerator() {
   }, [inputText, backgroundColor, selectedSize]);
 
   const characters = inputText.split("");
+  const words = inputText.split(" ").filter(word => word.length > 0);
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8 md:py-12">
@@ -213,7 +215,7 @@ export default function WordGenerator() {
             ) : (
               <div
                 ref={previewRef}
-                className="flex flex-wrap items-center justify-center content-center gap-2 rounded-lg"
+                className="flex flex-wrap items-center justify-center content-center gap-x-4 gap-y-1 rounded-lg"
                 style={{
                   backgroundColor: backgroundColor === "transparent" ? "transparent" : backgroundColor,
                   padding: `${padding}px`,
@@ -224,28 +226,28 @@ export default function WordGenerator() {
                   }),
                 }}
               >
-                {characters.map((char, index) => (
+                {words.map((word, wordIndex) => (
                   <div
-                    key={`${char}-${index}`}
-                    className="relative"
-                    style={{
-                      width: char === " " ? "25px" : "auto",
-                      height: "50px",
-                    }}
+                    key={`word-${wordIndex}`}
+                    className="flex items-center gap-0"
                   >
-                    {char !== " " ? (
-                      <Image
-                        src={getCharImagePath(char)}
-                        alt={char}
-                        width={0}
-                        height={50}
-                        sizes="100vw"
-                        className="h-[50px] w-auto"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="w-full h-full" />
-                    )}
+                    {word.split("").map((char, charIndex) => (
+                      <div
+                        key={`${char}-${wordIndex}-${charIndex}`}
+                        className="relative"
+                        style={{ height: "50px" }}
+                      >
+                        <Image
+                          src={getCharImagePath(char)}
+                          alt={char}
+                          width={0}
+                          height={50}
+                          sizes="100vw"
+                          className="h-[50px] w-auto"
+                          unoptimized
+                        />
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
