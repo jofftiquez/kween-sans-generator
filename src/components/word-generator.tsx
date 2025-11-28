@@ -90,8 +90,10 @@ export default function WordGenerator() {
   const [canShare, setCanShare] = useState(false);
   const [imageCache, setImageCache] = useState<Map<string, string>>(new Map());
   const [scale, setScale] = useState(1);
+  const [viewportScale, setViewportScale] = useState(1);
   const previewRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Preload all images as base64 and check share API on mount
   useEffect(() => {
@@ -101,6 +103,25 @@ export default function WordGenerator() {
     }
     // Preload images for better cross-browser compatibility
     preloadAllImages().then(setImageCache).catch(console.error);
+  }, []);
+
+  // Calculate viewport scale to fit canvas in container
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const updateViewportScale = () => {
+      if (!containerRef.current) return;
+      const containerWidth = containerRef.current.clientWidth - 32; // Account for padding
+      const newScale = Math.min(containerWidth / CANVAS_WIDTH, 1);
+      setViewportScale(newScale);
+    };
+
+    updateViewportScale();
+
+    const resizeObserver = new ResizeObserver(updateViewportScale);
+    resizeObserver.observe(containerRef.current);
+
+    return () => resizeObserver.disconnect();
   }, []);
 
   // Calculate scale to fit content within canvas
@@ -116,9 +137,9 @@ export default function WordGenerator() {
       const contentWidth = contentRef.current.scrollWidth;
       const contentHeight = contentRef.current.scrollHeight;
 
-      // Available space inside canvas (with some margin)
-      const availableWidth = CANVAS_WIDTH - 40;
-      const availableHeight = CANVAS_HEIGHT - 40;
+      // Available space inside canvas (accounting for padding)
+      const availableWidth = CANVAS_WIDTH - (padding * 2);
+      const availableHeight = CANVAS_HEIGHT - (padding * 2);
 
       // Calculate scale to fit both dimensions
       const scaleX = availableWidth / contentWidth;
@@ -132,7 +153,7 @@ export default function WordGenerator() {
     // Delay to allow images to load and render
     const timeoutId = setTimeout(calculateScale, 100);
     return () => clearTimeout(timeoutId);
-  }, [inputText, imageCache]);
+  }, [inputText, padding, imageCache]);
 
   // Get image source - use cached base64 if available, fallback to path
   const getImageSrc = useCallback((char: string) => {
@@ -315,47 +336,57 @@ export default function WordGenerator() {
             )}
           </div>
 
-          <div className="flex items-center justify-center bg-[#f5f5f5] rounded-xl p-4 overflow-auto">
+          <div
+            ref={containerRef}
+            className="flex items-center justify-center bg-[#f5f5f5] rounded-xl p-4"
+          >
             {inputText.length === 0 ? (
               <p className="text-[#737373] italic text-center py-20">
                 Your preview will appear here...
               </p>
             ) : (
               <div
-                ref={previewRef}
-                className="relative overflow-hidden rounded-lg flex items-center justify-center"
                 style={{
-                  backgroundColor: backgroundColor === "transparent" ? "transparent" : backgroundColor,
-                  width: `${CANVAS_WIDTH}px`,
-                  height: `${CANVAS_HEIGHT}px`,
-                  maxWidth: "100%",
+                  transform: `scale(${viewportScale})`,
+                  transformOrigin: "center center",
                 }}
               >
-                {/* Scaled content container */}
                 <div
-                  ref={contentRef}
-                  className="flex flex-wrap items-center justify-center content-center gap-2"
+                  ref={previewRef}
+                  className="relative overflow-hidden rounded-lg flex items-center justify-center"
                   style={{
-                    transform: `scale(${scale})`,
-                    transformOrigin: "center center",
+                    backgroundColor: backgroundColor === "transparent" ? "transparent" : backgroundColor,
+                    width: `${CANVAS_WIDTH}px`,
+                    height: `${CANVAS_HEIGHT}px`,
+                    padding: `${padding}px`,
                   }}
                 >
-                  {words.map((word, wordIndex) => (
-                    <div
-                      key={`word-${wordIndex}`}
-                      className="flex items-center"
-                    >
-                      {word.split("").map((char, charIndex) => (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          key={`${char}-${wordIndex}-${charIndex}`}
-                          src={getImageSrc(char)}
-                          alt={char}
-                          style={{ height: `${LETTER_HEIGHT}px`, width: "auto" }}
-                        />
-                      ))}
-                    </div>
-                  ))}
+                  {/* Scaled content container */}
+                  <div
+                    ref={contentRef}
+                    className="flex flex-wrap items-center justify-center content-center gap-2"
+                    style={{
+                      transform: `scale(${scale})`,
+                      transformOrigin: "center center",
+                    }}
+                  >
+                    {words.map((word, wordIndex) => (
+                      <div
+                        key={`word-${wordIndex}`}
+                        className="flex items-center"
+                      >
+                        {word.split("").map((char, charIndex) => (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            key={`${char}-${wordIndex}-${charIndex}`}
+                            src={getImageSrc(char)}
+                            alt={char}
+                            style={{ height: `${LETTER_HEIGHT}px`, width: "auto" }}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
