@@ -5,14 +5,25 @@ import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download, Type, Trash2, AlertCircle, Palette, Move } from "lucide-react";
-import Image from "next/image";
 import packageJson from "../../package.json";
 
 // Valid characters mapping (letters and numbers, will be converted to uppercase)
 const VALID_CHARS = /^[a-zA-Z0-9 ]*$/;
 
-// Time to wait for images to fully render before capturing (in ms)
-const IMAGE_RENDER_DELAY_MS = 100;
+// Wait for all images in an element to be fully loaded
+async function waitForImagesToLoad(element: HTMLElement): Promise<void> {
+  const images = element.querySelectorAll("img");
+  const promises = Array.from(images).map((img) => {
+    if (img.complete && img.naturalHeight !== 0) {
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
+    });
+  });
+  await Promise.all(promises);
+}
 
 // Background color presets
 const BACKGROUND_PRESETS = [
@@ -65,8 +76,8 @@ export default function WordGenerator() {
     setError(null);
 
     try {
-      // Wait for images to fully render before capturing
-      await new Promise((resolve) => setTimeout(resolve, IMAGE_RENDER_DELAY_MS));
+      // Wait for all images to be fully loaded before capturing
+      await waitForImagesToLoad(previewRef.current);
 
       const options: Parameters<typeof toPng>[1] = {
         quality: 1.0,
@@ -222,21 +233,15 @@ export default function WordGenerator() {
                     className="flex items-center gap-0"
                   >
                     {word.split("").map((char, charIndex) => (
-                      <div
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
                         key={`${char}-${wordIndex}-${charIndex}`}
-                        className="relative"
-                        style={{ height: "50px" }}
-                      >
-                        <Image
-                          src={getCharImagePath(char)}
-                          alt={char}
-                          width={0}
-                          height={50}
-                          sizes="100vw"
-                          className="h-[50px] w-auto"
-                          unoptimized
-                        />
-                      </div>
+                        src={getCharImagePath(char)}
+                        alt={char}
+                        height={50}
+                        className="h-[50px] w-auto"
+                        crossOrigin="anonymous"
+                      />
                     ))}
                   </div>
                 ))}
