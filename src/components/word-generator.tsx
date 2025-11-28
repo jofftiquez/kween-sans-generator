@@ -76,15 +76,34 @@ export default function WordGenerator() {
 
       const dataUrl = await toPng(previewRef.current, options);
 
-      // Create download link
-      const link = document.createElement("a");
-      link.download = `kween-sans-${inputText
+      const fileName = `kween-sans-${inputText
         .trim()
         .replace(/\s+/g, "-")
         .toLowerCase()}.png`;
-      link.href = dataUrl;
-      link.click();
+
+      // Convert data URL to blob for sharing
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], fileName, { type: "image/png" });
+
+      // Use Web Share API on mobile (allows saving to Photos)
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: "Kween Sans Image",
+        });
+      } else {
+        // Fallback to download for desktop
+        const link = document.createElement("a");
+        link.download = fileName;
+        link.href = dataUrl;
+        link.click();
+      }
     } catch (err) {
+      // Ignore AbortError (user cancelled share dialog)
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
       console.error("Error generating image:", err);
       setError("Failed to generate image. Please try again.");
     } finally {
