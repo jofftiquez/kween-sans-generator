@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Type, Trash2, AlertCircle, Palette, Move, MoveHorizontal, Scaling, Share2 } from "lucide-react";
+import { Download, Type, Trash2, AlertCircle, Palette, Move, Share2 } from "lucide-react";
 import packageJson from "../../package.json";
 
 // Valid characters mapping (letters and numbers, will be converted to uppercase)
@@ -67,15 +67,12 @@ const BACKGROUND_PRESETS = [
 // Padding options in pixels
 const PADDING_OPTIONS = [0, 8, 16, 24, 32] as const;
 
-// Letter size (height in pixels)
-const MIN_LETTER_SIZE = 30;
-const MAX_LETTER_SIZE = 150;
-const DEFAULT_LETTER_SIZE = 50;
+// Fixed canvas dimensions
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 400;
 
-// Container width range
-const MIN_CONTAINER_WIDTH = 200;
-const MAX_CONTAINER_WIDTH = 1200;
-const DEFAULT_CONTAINER_WIDTH = 500;
+// Fixed letter height
+const LETTER_HEIGHT = 80;
 
 // Get image path for a character (all uppercase letters and numbers use PNG)
 function getCharImagePath(char: string): string {
@@ -90,11 +87,11 @@ export default function WordGenerator() {
   const [backgroundColor, setBackgroundColor] = useState("transparent");
   const [customColor, setCustomColor] = useState("#e91e8b");
   const [padding, setPadding] = useState(8);
-  const [letterSize, setLetterSize] = useState(DEFAULT_LETTER_SIZE);
-  const [containerWidth, setContainerWidth] = useState(DEFAULT_CONTAINER_WIDTH);
   const [canShare, setCanShare] = useState(false);
   const [imageCache, setImageCache] = useState<Map<string, string>>(new Map());
+  const [scale, setScale] = useState(1);
   const previewRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Preload all images as base64 and check share API on mount
   useEffect(() => {
@@ -104,6 +101,37 @@ export default function WordGenerator() {
     // Preload images for better cross-browser compatibility
     preloadAllImages().then(setImageCache).catch(console.error);
   }, []);
+
+  // Calculate scale to fit content within canvas
+  useEffect(() => {
+    if (!contentRef.current || inputText.trim().length === 0) {
+      setScale(1);
+      return;
+    }
+
+    const calculateScale = () => {
+      if (!contentRef.current) return;
+
+      const contentWidth = contentRef.current.scrollWidth;
+      const contentHeight = contentRef.current.scrollHeight;
+
+      // Available space inside canvas (with some margin)
+      const availableWidth = CANVAS_WIDTH - 40;
+      const availableHeight = CANVAS_HEIGHT - 40;
+
+      // Calculate scale to fit both dimensions
+      const scaleX = availableWidth / contentWidth;
+      const scaleY = availableHeight / contentHeight;
+
+      // Use the smaller scale to ensure it fits both dimensions
+      const newScale = Math.min(scaleX, scaleY, 1); // Cap at 1 to not enlarge
+      setScale(newScale);
+    };
+
+    // Delay to allow images to load and render
+    const timeoutId = setTimeout(calculateScale, 100);
+    return () => clearTimeout(timeoutId);
+  }, [inputText, imageCache]);
 
   // Get image source - use cached base64 if available, fallback to path
   const getImageSrc = useCallback((char: string) => {
@@ -286,39 +314,48 @@ export default function WordGenerator() {
             )}
           </div>
 
-          <div className="min-h-[200px] lg:min-h-[300px] flex items-center justify-center bg-[#f5f5f5] rounded-xl p-4 overflow-auto">
+          <div className="flex items-center justify-center bg-[#f5f5f5] rounded-xl p-4 overflow-auto">
             {inputText.length === 0 ? (
-              <p className="text-[#737373] italic text-center">
+              <p className="text-[#737373] italic text-center py-20">
                 Your preview will appear here...
               </p>
             ) : (
               <div
                 ref={previewRef}
-                className="inline-flex flex-wrap items-center justify-center content-center rounded-lg"
+                className="relative overflow-hidden rounded-lg flex items-center justify-center"
                 style={{
                   backgroundColor: backgroundColor === "transparent" ? "transparent" : backgroundColor,
-                  padding: `${padding}px`,
-                  minWidth: `${containerWidth}px`,
+                  width: `${CANVAS_WIDTH}px`,
+                  height: `${CANVAS_HEIGHT}px`,
                   maxWidth: "100%",
-                  gap: `${Math.max(4, letterSize * 0.08)}px ${Math.max(8, letterSize * 0.15)}px`,
                 }}
               >
-                {words.map((word, wordIndex) => (
-                  <div
-                    key={`word-${wordIndex}`}
-                    className="flex items-center"
-                  >
-                    {word.split("").map((char, charIndex) => (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        key={`${char}-${wordIndex}-${charIndex}`}
-                        src={getImageSrc(char)}
-                        alt={char}
-                        style={{ height: `${letterSize}px`, width: "auto" }}
-                      />
-                    ))}
-                  </div>
-                ))}
+                {/* Scaled content container */}
+                <div
+                  ref={contentRef}
+                  className="flex flex-wrap items-center justify-center content-center gap-2"
+                  style={{
+                    transform: `scale(${scale})`,
+                    transformOrigin: "center center",
+                  }}
+                >
+                  {words.map((word, wordIndex) => (
+                    <div
+                      key={`word-${wordIndex}`}
+                      className="flex items-center"
+                    >
+                      {word.split("").map((char, charIndex) => (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          key={`${char}-${wordIndex}-${charIndex}`}
+                          src={getImageSrc(char)}
+                          alt={char}
+                          style={{ height: `${LETTER_HEIGHT}px`, width: "auto" }}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -431,62 +468,6 @@ export default function WordGenerator() {
                     title="Pick a custom color"
                   />
                 </div>
-              </div>
-            </div>
-
-            {/* Letter Size */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Scaling className="w-5 h-5 text-[#e91e8b]" />
-                  <label className="text-base font-semibold text-[#3d3d3d]">
-                    Letter Size
-                  </label>
-                </div>
-                <span className="text-sm font-medium text-[#e91e8b] bg-[#fce7f3] px-2 py-1 rounded">
-                  {letterSize}px
-                </span>
-              </div>
-              <input
-                type="range"
-                min={MIN_LETTER_SIZE}
-                max={MAX_LETTER_SIZE}
-                step={5}
-                value={letterSize}
-                onChange={(e) => setLetterSize(Number(e.target.value))}
-                className="w-full h-2 bg-[#f5f5f5] rounded-lg appearance-none cursor-pointer accent-[#e91e8b]"
-              />
-              <div className="flex justify-between text-xs text-[#737373] mt-1">
-                <span>{MIN_LETTER_SIZE}px</span>
-                <span>{MAX_LETTER_SIZE}px</span>
-              </div>
-            </div>
-
-            {/* Output Width */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <MoveHorizontal className="w-5 h-5 text-[#e91e8b]" />
-                  <label className="text-base font-semibold text-[#3d3d3d]">
-                    Output Width
-                  </label>
-                </div>
-                <span className="text-sm font-medium text-[#e91e8b] bg-[#fce7f3] px-2 py-1 rounded">
-                  {containerWidth}px
-                </span>
-              </div>
-              <input
-                type="range"
-                min={MIN_CONTAINER_WIDTH}
-                max={MAX_CONTAINER_WIDTH}
-                step={50}
-                value={containerWidth}
-                onChange={(e) => setContainerWidth(Number(e.target.value))}
-                className="w-full h-2 bg-[#f5f5f5] rounded-lg appearance-none cursor-pointer accent-[#e91e8b]"
-              />
-              <div className="flex justify-between text-xs text-[#737373] mt-1">
-                <span>{MIN_CONTAINER_WIDTH}px</span>
-                <span>{MAX_CONTAINER_WIDTH}px</span>
               </div>
             </div>
 
