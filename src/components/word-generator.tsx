@@ -1,14 +1,41 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Type, Trash2, AlertCircle, Palette, Move } from "lucide-react";
+import { Download, Type, Trash2, AlertCircle, Palette, Move, MoveHorizontal, Scaling, Share2 } from "lucide-react";
 import packageJson from "../../package.json";
 
 // Valid characters mapping (letters and numbers, will be converted to uppercase)
 const VALID_CHARS = /^[a-zA-Z0-9 ]*$/;
+
+// All valid characters for preloading
+const ALL_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".split("");
+
+// Convert image URL to base64 data URL
+async function imageToBase64(url: string): Promise<string> {
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// Preload all character images as base64
+async function preloadAllImages(): Promise<Map<string, string>> {
+  const cache = new Map<string, string>();
+  const promises = ALL_CHARS.map(async (char) => {
+    const url = `/letters/${char}.png`;
+    const base64 = await imageToBase64(url);
+    cache.set(char, base64);
+  });
+  await Promise.all(promises);
+  return cache;
+}
 
 // Wait for all images in an element to be fully loaded
 async function waitForImagesToLoad(element: HTMLElement): Promise<void> {
@@ -17,12 +44,14 @@ async function waitForImagesToLoad(element: HTMLElement): Promise<void> {
     if (img.complete && img.naturalHeight !== 0) {
       return Promise.resolve();
     }
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve) => {
       img.onload = () => resolve();
-      img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
+      img.onerror = () => resolve(); // Resolve anyway to not block
     });
   });
   await Promise.all(promises);
+  // Small delay to ensure rendering is complete
+  await new Promise((resolve) => setTimeout(resolve, 100));
 }
 
 // Background color presets
@@ -38,6 +67,16 @@ const BACKGROUND_PRESETS = [
 // Padding options in pixels
 const PADDING_OPTIONS = [0, 8, 16, 24, 32] as const;
 
+// Letter size (height in pixels)
+const MIN_LETTER_SIZE = 30;
+const MAX_LETTER_SIZE = 150;
+const DEFAULT_LETTER_SIZE = 50;
+
+// Container width range
+const MIN_CONTAINER_WIDTH = 200;
+const MAX_CONTAINER_WIDTH = 1200;
+const DEFAULT_CONTAINER_WIDTH = 500;
+
 // Get image path for a character (all uppercase letters and numbers use PNG)
 function getCharImagePath(char: string): string {
   return `/letters/${char}.png`;
@@ -45,12 +84,31 @@ function getCharImagePath(char: string): string {
 
 export default function WordGenerator() {
   const [inputText, setInputText] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [backgroundColor, setBackgroundColor] = useState("transparent");
   const [customColor, setCustomColor] = useState("#e91e8b");
   const [padding, setPadding] = useState(8);
+  const [letterSize, setLetterSize] = useState(DEFAULT_LETTER_SIZE);
+  const [containerWidth, setContainerWidth] = useState(DEFAULT_CONTAINER_WIDTH);
+  const [canShare, setCanShare] = useState(false);
+  const [imageCache, setImageCache] = useState<Map<string, string>>(new Map());
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // Preload all images as base64 and check share API on mount
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      setCanShare(true);
+    }
+    // Preload images for better cross-browser compatibility
+    preloadAllImages().then(setImageCache).catch(console.error);
+  }, []);
+
+  // Get image source - use cached base64 if available, fallback to path
+  const getImageSrc = useCallback((char: string) => {
+    return imageCache.get(char) || getCharImagePath(char);
+  }, [imageCache]);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,59 +127,74 @@ export default function WordGenerator() {
     setError(null);
   }, []);
 
-  const handleGenerate = useCallback(async () => {
+  // Helper to generate image data
+  const generateImage = useCallback(async () => {
+    if (!previewRef.current) throw new Error("Preview not available");
+
+    await waitForImagesToLoad(previewRef.current);
+
+    const options: Parameters<typeof toPng>[1] = {
+      quality: 1.0,
+      pixelRatio: 2,
+      backgroundColor: backgroundColor === "transparent" ? undefined : backgroundColor,
+      skipFonts: true,
+    };
+
+    const dataUrl = await toPng(previewRef.current, options);
+    const fileName = `kween-sans-${Date.now()}.png`;
+
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    const file = new File([blob], fileName, { type: "image/png" });
+
+    return { dataUrl, fileName, file };
+  }, [backgroundColor]);
+
+  const handleDownload = useCallback(async () => {
     if (!previewRef.current || inputText.trim().length === 0) return;
 
-    setIsGenerating(true);
+    setIsDownloading(true);
     setError(null);
 
     try {
-      // Wait for all images to be fully loaded before capturing
-      await waitForImagesToLoad(previewRef.current);
+      const { dataUrl, fileName } = await generateImage();
+      const link = document.createElement("a");
+      link.download = fileName;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Error downloading image:", err);
+      setError("Failed to download image. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [inputText, generateImage]);
 
-      const options: Parameters<typeof toPng>[1] = {
-        quality: 1.0,
-        pixelRatio: 2, // 2x for retina quality
-        backgroundColor: backgroundColor === "transparent" ? undefined : backgroundColor,
-        skipFonts: true, // Skip font embedding to avoid cross-origin CSS errors
-      };
+  const handleShare = useCallback(async () => {
+    if (!previewRef.current || inputText.trim().length === 0) return;
 
-      const dataUrl = await toPng(previewRef.current, options);
+    setIsSharing(true);
+    setError(null);
 
-      const fileName = `kween-sans-${Date.now().toString()
-        .trim()
-        .replace(/\s+/g, "-")
-        .toLowerCase()}.png`;
+    try {
+      const { file } = await generateImage();
 
-      // Convert data URL to blob for sharing
-      const response = await fetch(dataUrl);
-      const blob = await response.blob();
-      const file = new File([blob], fileName, { type: "image/png" });
-
-      // Use Web Share API on mobile (allows saving to Photos)
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: "Kween Sans Image",
         });
-      } else {
-        // Fallback to download for desktop
-        const link = document.createElement("a");
-        link.download = fileName;
-        link.href = dataUrl;
-        link.click();
       }
     } catch (err) {
-      // Ignore AbortError (user cancelled share dialog)
       if (err instanceof Error && err.name === "AbortError") {
-        return;
+        return; // User cancelled
       }
-      console.error("Error generating image:", err);
-      setError("Failed to generate image. Please try again.");
+      console.error("Error sharing image:", err);
+      setError("Failed to share image. Please try again.");
     } finally {
-      setIsGenerating(false);
+      setIsSharing(false);
     }
-  }, [inputText, backgroundColor]);
+  }, [inputText, generateImage]);
 
   const characters = inputText.split("");
   const words = inputText.split(" ").filter(word => word.length > 0);
@@ -221,26 +294,27 @@ export default function WordGenerator() {
             ) : (
               <div
                 ref={previewRef}
-                className="flex flex-wrap items-center justify-center content-center gap-x-4 gap-y-1 rounded-lg"
+                className="inline-flex flex-wrap items-center justify-center content-center rounded-lg"
                 style={{
                   backgroundColor: backgroundColor === "transparent" ? "transparent" : backgroundColor,
                   padding: `${padding}px`,
+                  minWidth: `${containerWidth}px`,
+                  maxWidth: "100%",
+                  gap: `${Math.max(4, letterSize * 0.08)}px ${Math.max(8, letterSize * 0.15)}px`,
                 }}
               >
                 {words.map((word, wordIndex) => (
                   <div
                     key={`word-${wordIndex}`}
-                    className="flex items-center gap-0"
+                    className="flex items-center"
                   >
                     {word.split("").map((char, charIndex) => (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         key={`${char}-${wordIndex}-${charIndex}`}
-                        src={getCharImagePath(char)}
+                        src={getImageSrc(char)}
                         alt={char}
-                        height={50}
-                        className="h-[50px] w-auto"
-                        crossOrigin="anonymous"
+                        style={{ height: `${letterSize}px`, width: "auto" }}
                       />
                     ))}
                   </div>
@@ -249,25 +323,48 @@ export default function WordGenerator() {
             )}
           </div>
 
-          {/* Generate Button */}
+          {/* Action Buttons */}
           <div className="mt-6 flex flex-col items-center gap-3">
-            <Button
-              onClick={handleGenerate}
-              disabled={inputText.trim().length === 0 || isGenerating}
-              className="h-14 px-8 text-lg font-semibold bg-[#e91e8b] hover:bg-[#c41574] text-white transition-all rounded-xl disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
-            >
-              {isGenerating ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Download className="w-5 h-5 mr-2" />
-                  Generate & Download PNG
-                </>
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <Button
+                onClick={handleDownload}
+                disabled={inputText.trim().length === 0 || isDownloading || isSharing}
+                className="h-14 px-8 text-lg font-semibold bg-[#e91e8b] hover:bg-[#c41574] text-white transition-all rounded-xl disabled:opacity-50 disabled:cursor-not-allowed flex-1"
+              >
+                {isDownloading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-5 h-5 mr-2" />
+                    Download PNG
+                  </>
+                )}
+              </Button>
+
+              {canShare && (
+                <Button
+                  onClick={handleShare}
+                  disabled={inputText.trim().length === 0 || isDownloading || isSharing}
+                  variant="outline"
+                  className="h-14 px-8 text-lg font-semibold border-2 border-[#e91e8b] text-[#e91e8b] hover:bg-[#e91e8b] hover:text-white transition-all rounded-xl disabled:opacity-50 disabled:cursor-not-allowed flex-1"
+                >
+                  {isSharing ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-[#e91e8b] border-t-transparent rounded-full animate-spin mr-2" />
+                      Sharing...
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="w-5 h-5 mr-2" />
+                      Share
+                    </>
+                  )}
+                </Button>
               )}
-            </Button>
+            </div>
 
             {error && (
               <div className="flex items-center gap-2 text-red-500 bg-red-50 px-4 py-2 rounded-lg">
@@ -334,6 +431,62 @@ export default function WordGenerator() {
                     title="Pick a custom color"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Letter Size */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Scaling className="w-5 h-5 text-[#e91e8b]" />
+                  <label className="text-base font-semibold text-[#3d3d3d]">
+                    Letter Size
+                  </label>
+                </div>
+                <span className="text-sm font-medium text-[#e91e8b] bg-[#fce7f3] px-2 py-1 rounded">
+                  {letterSize}px
+                </span>
+              </div>
+              <input
+                type="range"
+                min={MIN_LETTER_SIZE}
+                max={MAX_LETTER_SIZE}
+                step={5}
+                value={letterSize}
+                onChange={(e) => setLetterSize(Number(e.target.value))}
+                className="w-full h-2 bg-[#f5f5f5] rounded-lg appearance-none cursor-pointer accent-[#e91e8b]"
+              />
+              <div className="flex justify-between text-xs text-[#737373] mt-1">
+                <span>{MIN_LETTER_SIZE}px</span>
+                <span>{MAX_LETTER_SIZE}px</span>
+              </div>
+            </div>
+
+            {/* Output Width */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <MoveHorizontal className="w-5 h-5 text-[#e91e8b]" />
+                  <label className="text-base font-semibold text-[#3d3d3d]">
+                    Output Width
+                  </label>
+                </div>
+                <span className="text-sm font-medium text-[#e91e8b] bg-[#fce7f3] px-2 py-1 rounded">
+                  {containerWidth}px
+                </span>
+              </div>
+              <input
+                type="range"
+                min={MIN_CONTAINER_WIDTH}
+                max={MAX_CONTAINER_WIDTH}
+                step={50}
+                value={containerWidth}
+                onChange={(e) => setContainerWidth(Number(e.target.value))}
+                className="w-full h-2 bg-[#f5f5f5] rounded-lg appearance-none cursor-pointer accent-[#e91e8b]"
+              />
+              <div className="flex justify-between text-xs text-[#737373] mt-1">
+                <span>{MIN_CONTAINER_WIDTH}px</span>
+                <span>{MAX_CONTAINER_WIDTH}px</span>
               </div>
             </div>
 
