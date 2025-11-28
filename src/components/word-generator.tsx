@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download, Type, Trash2, AlertCircle, Palette, Move } from "lucide-react";
 import Image from "next/image";
+import packageJson from "../../package.json";
 
 // Valid characters mapping (letters and numbers, will be converted to uppercase)
 const VALID_CHARS = /^[a-zA-Z0-9 ]*$/;
@@ -358,6 +359,11 @@ export default function WordGenerator() {
 
           </div>
         </div>
+      </div>
+
+      {/* Version Footer */}
+      <div className="mt-8 text-center">
+        <span className="text-xs text-white/40">v{packageJson.version}</span>
       </div>
     </div>
   );
