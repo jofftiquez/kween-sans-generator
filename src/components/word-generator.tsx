@@ -76,7 +76,7 @@ export default function WordGenerator() {
 
       const dataUrl = await toPng(previewRef.current, options);
 
-      const fileName = `kween-sans-${inputText
+      const fileName = `kween-sans-${Date.now().toString()
         .trim()
         .replace(/\s+/g, "-")
         .toLowerCase()}.png`;
