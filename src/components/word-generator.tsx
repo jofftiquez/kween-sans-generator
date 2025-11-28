@@ -95,7 +95,8 @@ export default function WordGenerator() {
 
   // Preload all images as base64 and check share API on mount
   useEffect(() => {
-    if (typeof navigator !== "undefined" && navigator.share) {
+    // Check if Web Share API with file sharing is available
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function" && typeof navigator.canShare === "function") {
       setCanShare(true);
     }
     // Preload images for better cross-browser compatibility
